@@ -7,10 +7,13 @@
 #include <random>
 #include <thread>
 #include <chrono>
+#include <cstdlib>
 //comunicação
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+
+#include <filesystem>
 #define SOCKET_PATH "/tmp/comunica_redes"
 
 using namespace std;
@@ -20,9 +23,15 @@ int gera_aleatorio(const int n);
 string n_transic(const string& tn, const unordered_map<string, Estado>& es);
 void espera(const int tempo) { this_thread::sleep_for(chrono::milliseconds(tempo)); }
 void transcreve_rede(unordered_map <string, Estado> es);
-
+void uds_send(const std::string& msg);
 
 int main(){
+	if(filesystem::exists("redes.txt")){
+		cout << "Arquivo existe" << endl;
+	} else {
+		cout << "Arquivo não existe" << endl;
+	}
+			
 	unordered_map <string, Estado> estados;
 	estados.emplace("inicial", Estado("inicial", 0,{{"t1","inicial"}, {"t2","a"}}));
 	estados.emplace("a", Estado("a", 1, {{"t2","a"}, {"t3","b"}, {"t1","c"}}));
@@ -31,18 +40,21 @@ int main(){
 	estados.emplace("d", Estado("d", 4, {{"t2","d"}, {"t3","e"}}));
 	estados.emplace("e", Estado("e", 5, {{"t3","e"}, {"t1","inicial"}}));
 	vector<string>chaves = estados.at("a").retorna_chaves();
-
-	//for(auto c: chaves)
-	//	cout << c << endl;	
-	/*//início do funcionamento
-	string estado_atual = n_transic("inicial", estados);
-	for(int i = 0; i < 20; i++){
-		espera(500);
-		estado_atual = n_transic(estado_atual, estados);
-	}
-	*/
 	transcreve_rede(estados);
-	cout << "Teste" << endl;
+	system("x-terminal-emulator -e './observador' &");
+	
+	//início do funcionamento
+	string estado_atual = n_transic("inicial", estados);
+	//for(int i = 0; i < 20; i++){
+	//	espera(500);
+	//	estado_atual = n_transic(estado_atual, estados);
+	//}
+	//cout << "Transição tomada: " << estado_atual << endl;
+	
+	//system("x-terminal-emulator &");
+
+
+
 }
 
 int gera_aleatorio(const int n){
@@ -63,6 +75,10 @@ string n_transic(const string& tn, const unordered_map<string, Estado>& es) {
 	//escolha do próximo estado
 	int tamanho_transics = transics.size();
 	string proxima_transic = transics[gera_aleatorio(tamanho_transics)];
+
+	//envia transição para documento a ser lido 
+	uds_send(proxima_transic);
+	
 	Estado estado = es.at(tn);
 	unordered_map<string,string>vizinhos = estado.retorna_vizinhos();
 	string novo_estado = vizinhos.at(proxima_transic);
@@ -127,7 +143,7 @@ void uds_send(const std::string& msg) {
 		return;
 	}
 
-	write(client_fd, msg.c_str(), msg.size());
+	send(client_fd, msg.c_str(), msg.size(), MSG_DONTWAIT);
 
 	close(client_fd);
 	close(server_fd);

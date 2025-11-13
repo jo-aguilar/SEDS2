@@ -9,16 +9,33 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <filesystem>
+//manipulação de tempo
+#include <thread>
+#include <chrono>
+
 #define SOCKET_PATH "/tmp/comunica_redes"
 using namespace std;
 
 vector<string>tokenizar_linha(string entrada);
 unordered_map<string, Estado> retorna_rede();
 string uds_recv();
+void espera(const int tempo) { this_thread::sleep_for(chrono::milliseconds(tempo)); }
 
 int main(){
 	unordered_map<string, Estado>estados = retorna_rede();
-
+	string resposta = uds_recv();
+	cout << "Transição tomada: " << resposta << endl;
+	espera(1000);
+	/*
+	while(true){
+		string resposta = uds_recv();
+		if(resposta == "") continue;
+		else {
+			cout << "Transição tomada: " << resposta << endl;
+		}
+	}
+	*/
 }
 
 vector<string>tokenizar_linha(string entrada){
