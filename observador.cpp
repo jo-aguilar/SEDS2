@@ -24,18 +24,24 @@ void espera(const int tempo) { this_thread::sleep_for(chrono::milliseconds(tempo
 
 int main(){
 	unordered_map<string, Estado>estados = retorna_rede();
-	string resposta = uds_recv();
-	cout << "Transição tomada: " << resposta << endl;
-	espera(1000);
-	/*
+	//string resposta = uds_recv();
+	//cout << "Transição tomada: " << resposta << endl;
+	//espera(1000);
+	
 	while(true){
-		string resposta = uds_recv();
-		if(resposta == "") continue;
-		else {
+		if(filesystem::exists("/tmp/comunica_redes")){
+			string resposta = uds_recv();
 			cout << "Transição tomada: " << resposta << endl;
 		}
+		else { continue; }
+		espera(1000);
+		//string resposta = uds_recv();
+		//if(resposta == "") continue;
+		//else {
+		//	cout << "Transição tomada: " << resposta << endl;
+		//}
 	}
-	*/
+	
 }
 
 vector<string>tokenizar_linha(string entrada){

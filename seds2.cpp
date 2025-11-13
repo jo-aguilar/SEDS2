@@ -45,13 +45,11 @@ int main(){
 	
 	//início do funcionamento
 	string estado_atual = n_transic("inicial", estados);
-	//for(int i = 0; i < 20; i++){
-	//	espera(500);
-	//	estado_atual = n_transic(estado_atual, estados);
-	//}
-	//cout << "Transição tomada: " << estado_atual << endl;
+	for(int i = 0; i < 20; i++){
+		espera(500);
+		estado_atual = n_transic(estado_atual, estados);
+	}
 	
-	//system("x-terminal-emulator &");
 
 
 
