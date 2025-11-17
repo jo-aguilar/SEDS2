@@ -12,7 +12,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-
+//manipulação dos programas
+#include <sys/types.h>
 #include <filesystem>
 #define SOCKET_PATH "/tmp/comunica_redes"
 
@@ -25,7 +26,12 @@ void espera(const int tempo) { this_thread::sleep_for(chrono::milliseconds(tempo
 void transcreve_rede(unordered_map <string, Estado> es);
 void uds_send(const std::string& msg);
 
-int main(int argc, char** argv){
+int main(int argc, char* argv[]){
+	
+	//obtenção do PID do programa atual
+	pid_t pid = getpid();
+	//uds_send(to_string(pid));
+
 	//criação da rede	
 	unordered_map <string, Estado> estados;
 	estados.emplace("inicial", Estado("inicial", 0,{{"t1","inicial"}, {"t2","a"}}));
@@ -36,9 +42,14 @@ int main(int argc, char** argv){
 	estados.emplace("e", Estado("e", 5, {{"t3","e"}, {"t1","inicial"}}));
 	vector<string>chaves = estados.at("a").retorna_chaves();
 	transcreve_rede(estados);
-	
-	system("x-terminal-emulator -e './observador' &");
-	
+
+		
+	string comando = "x-terminal-emulator -e \"./observador\" &";
+	cout << comando << endl;
+	system((comando).c_str());
+	uds_send(to_string(pid));	
+
+
 	//início do funcionamento
 	string estado_atual = n_transic("inicial", estados);
 	for(int i = 0; i < 20; i++){
