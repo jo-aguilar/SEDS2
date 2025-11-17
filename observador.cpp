@@ -13,6 +13,7 @@
 //manipulação de tempo
 #include <thread>
 #include <chrono>
+#include <algorithm>
 
 #define SOCKET_PATH "/tmp/comunica_redes"
 using namespace std;
@@ -22,25 +23,73 @@ unordered_map<string, Estado> retorna_rede();
 string uds_recv();
 void espera(const int tempo) { this_thread::sleep_for(chrono::milliseconds(tempo)); }
 
-int main(){
+int main(int argc, char** argv){
 	unordered_map<string, Estado>estados = retorna_rede();
-	//string resposta = uds_recv();
-	//cout << "Transição tomada: " << resposta << endl;
-	//espera(1000);
+	unordered_map<string,string>vizinhos_atuais;
+	vector<string>chaves;
+	Estado atual("", 0);
 	
+	if(argc==1){
+		atual = estados.at("inicial");
+		cout << "Primeiro estado é o inicial" << endl;
+		vizinhos_atuais = atual.retorna_vizinhos();
+		chaves = estados.at("inicial").retorna_chaves();
+	}
+	int a = 0;
+
+	while(true){
+		if(filesystem::exists("/tmp/comunica_redes")){
+			string resposta = uds_recv();
+
+			if(resposta != ""){
+				if(find(chaves.begin(), chaves.end(), resposta) != chaves.end()){
+					cout << ++a <<  ". Transição tomada: " << resposta << endl;
+				}else{//[!!!] FALHA. Transição não está presente entre chaves
+					cout << "[!!!] Erro" << endl;
+					espera(10000);
+					return 0;
+				}
+				//vizinhos_atuais = atual.retorna_vizinhos();
+				//chaves = estados.at(vizinhos_atuais.at(resposta))
+				//		.retorna_chaves();
+					atual = estados.at(vizinhos_atuais.at(resposta));
+					vizinhos_atuais = atual.retorna_vizinhos();
+					chaves = atual.retorna_chaves();
+				
+			} else { 
+				continue; }
+		} else { 
+			continue;       
+		}
+	}
+
+	/*	
 	while(true){
 		if(filesystem::exists("/tmp/comunica_redes")){
 			string resposta = uds_recv();
 			cout << "Transição tomada: " << resposta << endl;
+			if(find(chaves.begin(), chaves.end(), resposta) != chaves.end()){
+			//continua normalmente se a transição recebida estiver entre as
+			//possíveis para o estado atual
+				atual = estados.at(vizinhos_atuais.at(resposta));
+				cout << "Novo estado é: " << atual.retorna_nome() << endl;
+				vizinhos_atuais = atual.retorna_vizinhos();
+				chaves = estados.at(vizinhos_atuais.at(resposta))
+					        .retorna_chaves();
+				continue;
+			}
+			else{
+			//caso contrário, detecta um erro de transições, podendo ser uma
+			//falha de segurança, terminando o programa.
+				cout << "[!!!] Erro" << endl;
+				espera(30000);
+				return 0;
+			}
 		}
 		else { continue; }
 		espera(1000);
-		//string resposta = uds_recv();
-		//if(resposta == "") continue;
-		//else {
-		//	cout << "Transição tomada: " << resposta << endl;
-		//}
 	}
+	*/
 	
 }
 
@@ -68,20 +117,24 @@ unordered_map<string, Estado> retorna_rede(){
 		vector<string> saida = tokenizar_linha(captura);
 		Estado novo_estado(saida[0], stoi(saida[1]));
 
-		for(int i = 2; i+1 < saida.size(); i+=2){
+		for(int i = 2; i < saida.size()-1; i+=2){
 			//cria as leis de transição e passa cada uma das 
 			//condições para o novo estado
-			novo_estado.adiciona_vizinho(saida[0], saida[i+1]);
+			novo_estado.adiciona_vizinho(saida[i], saida[i+1]);
 		}
 		estados.emplace(novo_estado.retorna_nome(), novo_estado);
 	}	
 	arquivo.close();
 	return estados;	
 }
+
 string uds_recv() {
 	int sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
+		cout << "[ERRO]" << endl;
+		espera(10000);
 		perror("socket");
+		//espera(10000);
 		return "";
 	}
 
@@ -89,7 +142,8 @@ string uds_recv() {
 	addr.sun_family = AF_UNIX;
 	strcpy(addr.sun_path, SOCKET_PATH);
 	if (connect(sock, (sockaddr*)&addr, sizeof(addr)) < 0) {
-		perror("connect");
+		//perror("connect");
+		//espera(10000);
 		close(sock);
 		return "";
 	}

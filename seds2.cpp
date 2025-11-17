@@ -25,13 +25,8 @@ void espera(const int tempo) { this_thread::sleep_for(chrono::milliseconds(tempo
 void transcreve_rede(unordered_map <string, Estado> es);
 void uds_send(const std::string& msg);
 
-int main(){
-	if(filesystem::exists("redes.txt")){
-		cout << "Arquivo existe" << endl;
-	} else {
-		cout << "Arquivo não existe" << endl;
-	}
-			
+int main(int argc, char** argv){
+	//criação da rede	
 	unordered_map <string, Estado> estados;
 	estados.emplace("inicial", Estado("inicial", 0,{{"t1","inicial"}, {"t2","a"}}));
 	estados.emplace("a", Estado("a", 1, {{"t2","a"}, {"t3","b"}, {"t1","c"}}));
@@ -41,6 +36,7 @@ int main(){
 	estados.emplace("e", Estado("e", 5, {{"t3","e"}, {"t1","inicial"}}));
 	vector<string>chaves = estados.at("a").retorna_chaves();
 	transcreve_rede(estados);
+	
 	system("x-terminal-emulator -e './observador' &");
 	
 	//início do funcionamento
@@ -50,9 +46,6 @@ int main(){
 		estado_atual = n_transic(estado_atual, estados);
 	}
 	
-
-
-
 }
 
 int gera_aleatorio(const int n){
