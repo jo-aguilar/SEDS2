@@ -25,24 +25,26 @@ string n_transic(const string& tn, const unordered_map<string, Estado>& es);
 void espera(const int tempo) { this_thread::sleep_for(chrono::milliseconds(tempo)); }
 void transcreve_rede(unordered_map <string, Estado> es);
 void uds_send(const std::string& msg);
+void func_espuria(){ cout << "Obtenção de uma memória qualquer" << endl;}
 
 int main(int argc, char* argv[]){
 	
+try{
+	void (*func_ponteiro)() = func_espuria;
+	cout << "Pointer de func_espuria(): " << &func_ponteiro << endl;
 	//obtenção do PID do programa atual
 	pid_t pid = getpid();
-	//uds_send(to_string(pid));
 
 	//criação da rede	
 	unordered_map <string, Estado> estados;
 	estados.emplace("inicial", Estado("inicial", 0,{{"t1","inicial"}, {"t2","a"}}));
 	estados.emplace("a", Estado("a", 1, {{"t2","a"}, {"t3","b"}, {"t1","c"}}));
-	estados.emplace("b", Estado("b", 2, {{"t2","b"}, {"t1","d"}}));
-	estados.emplace("c", Estado("c", 3, {{"t1","c"}, {"t2","d"}, {"t3","e"}}));
-	estados.emplace("d", Estado("d", 4, {{"t2","d"}, {"t3","e"}}));
-	estados.emplace("e", Estado("e", 5, {{"t3","e"}, {"t1","inicial"}}));
+	estados.emplace("b", Estado("b", 0, {{"t2","b"}, {"t1","d"}}));
+	estados.emplace("c", Estado("c", 0, {{"t1","c"}, {"t2","d"}, {"t3","e"}}));
+	estados.emplace("d", Estado("d", 0, {{"t2","d"}, {"t3","e"}}));
+	estados.emplace("e", Estado("e", 0, {{"t3","e"}, {"t1","inicial"}}));
 	vector<string>chaves = estados.at("a").retorna_chaves();
 	transcreve_rede(estados);
-
 		
 	string comando = "x-terminal-emulator -e \"./observador\" &";
 	cout << comando << endl;
@@ -56,6 +58,10 @@ int main(int argc, char* argv[]){
 		espera(500);
 		estado_atual = n_transic(estado_atual, estados);
 	}
+} catch (...){
+	//tratamento para qualquer tipo de erro encontrado no programa	
+	uds_send("aa");
+}
 	
 }
 
